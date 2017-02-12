@@ -51,7 +51,7 @@ These macros are enabled by the fact that each bit in the states' binary values 
 
 ##How the function works
 
-(Put image here.)
+!(OneFuncButton graphical example)[https://raw.githubusercontent.com/athnix/OneFuncButton/master/onefuncbutton_example.png]
 
 ##Constructing a button object
 
