@@ -1,9 +1,13 @@
 # OneFuncButton
 A simple Arduino button library modelled as a state machine
 
+##The state() function
+
+The `Button` class, apart from its constructor, only has one function which both checks and returns the button state. The function returns a specific value just after the button is pressed, released, and when sufficient time elapses to trigger a long-press event. The function doesn't use any kind of interrupts, so it needs to be called in a loop as often as possible, and its state should be saved in a variable or, for simpler sketches, it can be called directly in a switch-case or if statement.
+
 ##Button states
 
-A button can be in a number of possible states. The return value of the `state()` function can be one of the internal states (UP, DOWN\_\*) or a one-time event which is not actually stored as an internal state (PRESS\_\*, RELEASE\_\*). Additionaly, two internal states (DEBOUNCING\_\*) are abstracted inside the class and as such are never returned from the function.
+A button can be in a number of possible states. The return value of the `state()` function can be one of the internal states (UP, DOWN\_\*) or a one-time event which is not stored as an internal state (PRESS\_\*, RELEASE\_\*). Additionaly, two internal states (DEBOUNCING\_\*) are abstracted inside the class and as such are never returned from the function.
 
 Internal states, which are also returned as return values inbetween events, are:  
 ```c++
@@ -49,9 +53,15 @@ These macros are enabled by the fact that each bit in the states' binary values 
   `------ Debouncing?
 ```
 
-##How the function works
+###Graphical example in time
 
-![OneFuncButton graphical example](https://raw.githubusercontent.com/athnix/OneFuncButton/master/onefuncbutton_example.png)
+In the following example the user makes one short press and one long press (which is held enough to trigger three long-press events). Black line represents the physical state of the button, and below it are the logical states and press-release events.
+
+![OneFuncButton graphical example in time](https://raw.githubusercontent.com/athnix/OneFuncButton/master/onefuncbutton_example.png)
+
+###State machine diagram
+
+![OneFuncButton state machine diagram](https://raw.githubusercontent.com/athnix/OneFuncButton/master/onefuncbutton_diagram.gif)
 
 ##Constructing a button object
 
@@ -61,7 +71,7 @@ Button constructor takes one mandatory and three optional arguments. The mandato
 Button btn1(3);
 ```
 
-This will construct a button with the default values (active-high, firstHoldTime = 800, subsqHoldTime = 200). You can provide additional arguments to have the button active-low, or to have different HoldTime delays:
+This will construct a button with the default values (active-high, firstHoldTime = 800, subsqHoldTime = 200). You can provide additional arguments to have the button act as active-low, or to specify different HoldTime delays:
 
 ```c++
 Button btn1(3, LOW, 500, 300);
@@ -74,16 +84,18 @@ Here is an example of a simple use case:
 ###Hold to increment
 
 ```c++
+Button btn1(3);
 byte s = btn1.state();
 if (PRESSEVENT(s))
     minutes++;
 ```
 
-This will increment the minutes variable similarly to how incrementing the time while setting a real digital clock works. When the button is pressed and held, it will increase by one immediately, wait for a while (firstHoldTime), and then keep increasing by one in shorter intervals (subsqHoldTime).
+This will increment the `minutes` variable similarly to how incrementing the time when setting a real digital clock works. When the button is pressed and held, the value will increase by one immediately, wait for a while (firstHoldTime), and then keep increasing by one in shorter intervals (subsqHoldTime).
 
 ###Short-press and long-press actions
 
 ```c++
+Button btn1(3);
 byte s = btn1.state();
 switch (s) {
     case RELEASE_SHORT: shortPressAction(); break;
