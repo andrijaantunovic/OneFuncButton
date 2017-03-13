@@ -1,87 +1,76 @@
 # OneFuncButton
 A simple Arduino button library modelled as a state machine
 
-##The state() function
+##Constructing a button object
 
-The `Button` class, apart from its constructor, only has one function which both checks and returns the button state. The function returns a specific value just after the button is pressed, released, and when sufficient time elapses to trigger a long-press event. The function doesn't use any kind of interrupts, so it needs to be called in a loop as often as possible, and its state should be saved in a variable or, for simpler sketches, it can be called directly in a switch-case or if statement.
+Button constructor receives one mandatory and three optional arguments.
 
-##Button states
-
-A button can be in a number of possible states. The return value of the `state()` function can be one of the internal states (UP, DOWN\_\*) or a one-time event which is not stored as an internal state (PRESS\_\*, RELEASE\_\*). Additionaly, two internal states (DEBOUNCING\_\*) are abstracted inside the class and as such are never returned from the function.
-
-Internal states, which are also returned as return values inbetween events, are:  
 ```c++
-#define UP                 0b000000 // The button is currently up.
-#define DOWN_SHORT         0b000001 // The button has been pushed and is held down.
-#define DOWN_LONG_FIRST    0b000011 // The button has been held and one hold event has occured.
-#define DOWN_LONG_SUBSQ    0b000111 // The button has been held and two or more hold events have occured.
+Button button1(pin [, activeHigh] [, firstHoldTime] [, subsqHoldTime]);
 ```
 
-In most cases the internal states aren't very useful and you're better off just using the button events. Button events are:  
+Examples:
+
 ```c++
-#define PRESS_SHORT        0b001001 // The button has just been pushed down.
-#define PRESS_LONG_FIRST   0b001011 // The first hold event has just been triggered.
-#define PRESS_LONG_SUBSQ   0b001111 // The second or other hold event has just been triggered.
-#define RELEASE_SHORT      0b010000 // The button has just been released, and was not held long enough for a hold event to occur.
-#define RELEASE_LONG_FIRST 0b010010 // The button has just been released after one hold event occured.
-#define RELEASE_LONG_SUBSQ 0b010110 // The button has just been released after two or more hold events occured.
-```	
+Button button1(5);
+Button button2(6, LOW);
+Button button3(7, HIGH, 500, 300);
+```
 
-The following two states are internal-only and are intentionally abstracted inside the class:
+###Arguments
+
+* **pin** - Arduino pin to which the button is connected
+* **activeHigh** - HIGH for for active-high, LOW for active-low
+* **firstHoldTime** - time required to trigger the first HOLD event
+* **subsqHoldTime** - time required to trigger all subsequent HOLD events after the first one
+
+##Getting the button state
+
+The state() function needs to be called continuously in a loop. When the state() function is called and an event has occured since the previous call, it returns one of the following values:
+
 ```c++
-#define DEBOUNCING_UP      0b100000
-#define DEBOUNCING_DOWN    0b100001
+byte Button.state();
 ```
-When the button is in the `DEBOUNCING_UP` state, `UP` is returned, and when it's in the `DEBOUNCING_DOWN` state, `DOWN_SHORT` is returned.
 
-Three macro functions are also provided to simplify some common use-cases:
+Example:
+
 ```c++
-#define ISDOWN(X)          (X & 1)         //Evaluates true while the button is down
-#define PRESSEVENT(X)      (X & 0b001000)  //Evaluates true when any PRESS event occurs
-#define RELEASEEVENT(X)    (X & 0b010000)  //Evaluates true when any RELEASE event occurs
+byte s = button1.state();
 ```
 
-These macros are enabled by the fact that each bit in the states' binary values has a specific meaning:
-```
-0b001011
-  ||||||
-  |||||`- Button is down?
-  ||||`-- Short press (0) or long press (1)?
-  |||`--- If long-press phase, first longpress phase (0) or subsequent longpress phase (1)?
-  ||`---- Press event?
-  |`----- Release event?
-  `------ Debouncing?
-```
+###Button states
 
-###Graphical example in time
+* **PRESS_SHORT** - The button has just been pushed down.
+* **PRESS_LONG_FIRST** - The first hold event has just been triggered.
+* **PRESS_LONG_SUBSQ** - A non-first hold event has just been triggered.
+* **RELEASE_SHORT** - The button has just been released, and was not held long enough for any hold event to occur.
+* **RELEASE_LONG_FIRST** - The button has just been released after one hold event has occured.
+* **RELEASE_LONG_SUBSQ** - The button has just been released after two or more hold events have occured.
 
-In the following example the user makes one short press and one long press (which is held enough to trigger three long-press events). Black line represents the physical state of the button, and below it are the logical states and press-release events.
+In all other cases, when there is no event to report, it returns one of the following states:
+
+* **UP** - The button is currently up.
+* **DOWN_SHORT** - The button has been pushed and is held down.
+* **DOWN_LONG_FIRST** - The button is being held and one hold event has occured.
+* **DOWN_LONG_SUBSQ** - The button is being held and two or more hold events have occured.
+
+Three macros are provided which evaluate a stored button state:
+
+* **ISDOWN(byte)** - Evaluates true for any state in which the button must be down
+* **PRESSEVENT(byte)** - Evaluates true for any PRESS event
+* **RELEASEEVENT(byte)** - Evaluates true for any RELEASE event
+
+###User interaction example
+
+In the following example the user makes one short press and one long press (which is held enough to trigger three long-press events). Black line represents the physical state of the button. Logical states and press-release events are marked below.
 
 ![OneFuncButton graphical example in time](https://raw.githubusercontent.com/athnix/OneFuncButton/master/onefuncbutton_example.png)
 
-###State machine diagram
-
-![OneFuncButton state machine diagram](https://raw.githubusercontent.com/athnix/OneFuncButton/master/onefuncbutton_diagram.gif)
-
-##Constructing a button object
-
-Button constructor takes one mandatory and three optional arguments. The mandatory argument is the pin to which the button is connected.
-
-```c++
-Button btn1(3);
-```
-
-This will construct a button with the default values (active-high, firstHoldTime = 800, subsqHoldTime = 200). You can provide additional arguments to have the button act as active-low, or to specify different HoldTime delays:
-
-```c++
-Button btn1(3, LOW, 500, 300);
-```
-		
-##Examples of use
-
-Here is an example of a simple use case:
+##Code examples
 
 ###Hold to increment
+
+The following code increments the `minutes` variable by one, waits for a while (firstHoldTime), and then keeps increasing by one in shorter intervals (subsqHoldTime). This is a behavior similar to real-world digital clocks when their time is being set.
 
 ```c++
 Button btn1(3);
@@ -90,9 +79,9 @@ if (PRESSEVENT(s))
     minutes++;
 ```
 
-This will increment the `minutes` variable similarly to how incrementing the time when setting a real digital clock works. When the button is pressed and held, the value will increase by one immediately, wait for a while (firstHoldTime), and then keep increasing by one in shorter intervals (subsqHoldTime).
-
 ###Short-press and long-press actions
+
+The following code allows the user to perform two different actions by either short-pressing or long-pressing the button (without triggering the short-press action if they only intended to perform the long-press action).
 
 ```c++
 Button btn1(3);
@@ -103,22 +92,6 @@ switch (s) {
 }
 ```
 
-This allows the user to perform two different actions by either short-pressing or long-pressing the button (without triggering the short-press action if they only intended to perform the long-press action).
-
-###Short-press and long-press actions with cancel
-
-```c++
-Button btn1(3, HIGH, 800, 2000); //We have the subsqHoldTime set to 2000 so that the user has enough time to release the button inbetween the moments when the long action tone is played and when the action would be cancelled
-byte s = btn1.state();
-switch (s) {
-    case RELEASE_SHORT: shortPressAction(); break;
-    case PRESS_LONG_FIRST: playLongActionTone(); break;
-    case RELEASE_LONG_FIRST: longPressAction(); break;
-    case PRESS_LONG_SUBSQ: playCancelTone(); break;
-}
-```
-In this example the user is able to change their mind and not execute any action even after they started holding the button down by holding it for an additional 2000 ms after the long-action tone. If the user wishes to initiate a long-press action, they need to release the button after the long-action tone but before the cancel tone. This is similar to a feature found on some UPS devices which only have one button for both powering the equipment on and off.
-
-##Other notes
+##Macros
 
 Debouncing time can be changed by changing the DEBOUNCING_TIME macro in the function. By default it is 15 ms.
