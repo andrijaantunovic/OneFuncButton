@@ -1,12 +1,12 @@
 # OneFuncButton
 A simple Arduino button library modelled as a state machine
 
-##Constructing a button object
+## Constructing a button object
 
 Button constructor receives one mandatory and three optional arguments.
 
 ```c++
-Button button1(pin [, activeHigh] [, firstHoldTime] [, subsqHoldTime]);
+Button (pin [, activeState [, firstHoldTime [, subsqHoldTime]]]);
 ```
 
 Examples:
@@ -17,14 +17,14 @@ Button button2(6, LOW);
 Button button3(7, HIGH, 500, 300);
 ```
 
-###Arguments
+### Arguments
 
 * **pin** - Arduino pin to which the button is connected
-* **activeHigh** - HIGH for for active-high, LOW for active-low
+* **activeState** - HIGH for for active-high, LOW for active-low
 * **firstHoldTime** - time required to trigger the first HOLD event
 * **subsqHoldTime** - time required to trigger all subsequent HOLD events after the first one
 
-##Getting the button state
+## Getting the button state
 
 The state() function needs to be called continuously in a loop.
 
@@ -38,7 +38,7 @@ Example:
 byte s = button1.state();
 ```
 
-###Button states
+### Button states
 
 When the state() function is called and an event has occured since the previous call, it returns one of the following values:
 
@@ -56,7 +56,7 @@ In all other cases, when there is no event to report, it returns one of the foll
 * **DOWN_LONG_FIRST** - The button is being held and one hold event has occured.
 * **DOWN_LONG_SUBSQ** - The button is being held and two or more hold events have occured.
 
-Three macros are provided with the library which evaluate a stored button state:
+Three macros are provided with the library which evaluate a button state from a byte:
 
 * **ISDOWN(byte)** - Evaluates true for any state in which the button must be down
 * **PRESSEVENT(byte)** - Evaluates true for any PRESS event
@@ -68,9 +68,9 @@ In the following example the user makes one short press and one long press (whic
 
 ![OneFuncButton graphical example in time](https://raw.githubusercontent.com/athnix/OneFuncButton/master/onefuncbutton_example.png)
 
-##Code examples
+## Code examples
 
-###Hold to increment
+### Hold to increment
 
 The following code increments the `minutes` variable by one, waits for a while (firstHoldTime), and then keeps increasing by one in shorter intervals (subsqHoldTime). This is a behavior similar to real-world digital clocks when their time is being set.
 
@@ -93,7 +93,7 @@ void loop() {
 }
 ```
 
-###Short-press and long-press actions
+### Short-press and long-press actions
 
 The following code allows the user to perform two different actions by either short-pressing or long-pressing the button (without triggering the short-press action if they only intended to perform the long-press action).
 
@@ -117,6 +117,6 @@ void loop() {
 }
 ```
 
-##Macros
+## Macros
 
-Debouncing time can be changed by changing the DEBOUNCING_TIME macro in the function. By default it is 15 ms.
+Debouncing time can be changed by changing the DEBOUNCING_TIME macro in the library source code. By default it is 15 ms.
