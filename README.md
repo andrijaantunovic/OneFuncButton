@@ -1,6 +1,10 @@
 # OneFuncButton
 A simple Arduino button library modelled as a state machine
 
+---
+
+This library is intended for simple projects which need a quick and easy way of being controlled by push-buttons. It doesn't use any callbacks or interrupts.
+
 ## Constructing a button object
 
 Button constructor receives one mandatory and three optional arguments.
@@ -20,13 +24,15 @@ Button button3(7, HIGH, 500, 300);
 ### Arguments
 
 * **pin** - Arduino pin to which the button is connected
-* **activeState** - HIGH for for active-high, LOW for active-low
-* **firstHoldTime** - time required to trigger the first HOLD event
-* **subsqHoldTime** - time required to trigger all subsequent HOLD events after the first one
+* **activeState** - HIGH for for active-high, LOW for active-low (default: HIGH)
+* **firstHoldTime** - time required to trigger the first HOLD event (default: 800 ms)
+* **subsqHoldTime** - time required to trigger all subsequent HOLD events after the first one (default: 200 ms)
 
 ## Getting the button state
 
-The state() function needs to be called continuously in a loop.
+Apart from the button constructor, the library provides only one function which serves two roles: to continuously check and store the button state, and to return the current state of the button to the caller function.
+
+In order for the library to work properly, this function needs to be called continuously, so you shouldn't use any delays or other functions which will hang the main program for a long time. No interrupts are used in this library, and if the function is not called often enough and the user manages to push and release a button in-between two function calls, those actions will not be registered.
 
 ```c++
 byte Button.state();
@@ -38,7 +44,7 @@ Example:
 byte s = button1.state();
 ```
 
-### Button states
+### State function return value
 
 When the state() function is called and an event has occured since the previous call, it returns one of the following values:
 
@@ -62,7 +68,7 @@ Three macros are provided with the library which evaluate a button state from a 
 * **PRESSEVENT(byte)** - Evaluates true for any PRESS event
 * **RELEASEEVENT(byte)** - Evaluates true for any RELEASE event
 
-###User interaction example
+### User interaction example
 
 In the following example the user makes one short press and one long press (which is held enough to trigger three long-press events). Black line represents the physical state of the button. Logical states and press-release events are marked below.
 
@@ -120,3 +126,9 @@ void loop() {
 ## Macros
 
 Debouncing time can be changed by changing the DEBOUNCING_TIME macro in the library source code. By default it is 15 ms.
+
+## Internal state diagram
+
+![OneFuncButton state machine diagram](https://raw.githubusercontent.com/athnix/OneFuncButton/master/onefuncbutton_diagram.gif)
+
+Note: `DEBOUNCING_UP` and `DEBOUNCING_DOWN` are internal states, abstracted inside the class. When the button is in the `DEBOUNCING_UP` state, `UP` is returned, and when it's in the `DEBOUNCING_DOWN` state, `DOWN_SHORT` is returned.
